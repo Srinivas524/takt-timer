@@ -1,1 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNA4 Takt Time Study</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    .takt-header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .takt-header-left { display: flex; align-items: center; gap: 12px; }
+    .takt-header-icon {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .takt-header-icon svg { width: 20px; height: 20px; fill: white; }
+    .takt-header-title { color: white; font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+    .takt-header-subtitle { color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 500; margin-top: 1px; }
+
+    /* PROCESS BAR */
+    .takt-process-bar {
+      display: flex; align-items: center; gap: 16px;
+      padding: 10px 24px;
+      background: #eef2ff;
+      border-bottom: 2px solid #c7d2fe;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .takt-process-group { display: flex; align-items: center; gap: 8px; }
+    .takt-process-label {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px; color: #6366f1;
+    }
+    .takt-process-select {
+      padding: 7px 32px 7px 12px; border-radius: 8px;
+      border: 2px solid #c7d2fe; background: white;
+      color: #1e293b; font-size: 13px; font-weight: 700;
+      font-family: 'Inter', sans-serif; cursor: pointer; outline: none;
+      transition: all 0.2s;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .takt-process-select:hover { border-color: #6366f1; }
+    .takt-process-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+    .takt-process-select:disabled { opacity: 0.5; cursor: not-allowed; }
+    .takt-process-arrow { color: #a5b4fc; font-size: 18px; font-weight: 300; }
+    .takt-process-tag {
+      margin-left: auto;
+      padding: 4px 12px; border-radius: 6px;
+      background: #6366f1; color: white;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+    }
+    .takt-target-summary { display: flex; gap: 6px; flex-wrap: wrap; }
+    .takt-target-chip {
+      padding: 3px 10px; border-radius: 6px;
+      background: rgba(99,102,241,0.1); color: #6366f1;
+      font-size: 10px; font-weight: 700;
+      border: 1px solid #c7d2fe;
+      white-space: nowrap;
+    }
+
+    /* CONTROL BAR */
+    .takt-control-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 24px; background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .takt-obs-pills { display: flex; gap: 5px; }
+    .takt-obs-pill {
+      padding: 7px 16px; border-radius: 8px;
+      border: 2px solid #e2e8f0; background: white;
+      color: #64748b; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      position: relative; font-family: 'Inter', sans-serif;
+    }
+    .takt-obs-pill:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    .takt-obs-pill.selected {
+      border-color: #6366f1; background: #6366f1; color: white;
+      box-shadow: 0 2px 10px rgba(99,102,241,0.3);
+    }
+    .takt-obs-pill.completed { border-color: #22c55e; color: #22c55e; background: #f0fdf4; }
+    .takt-obs-pill.completed::after {
+      content: '✓'; position: absolute; top: -6px; right: -6px;
+      background: #22c55e; color: white; width: 16px; height: 16px;
+      border-radius: 50%; font-size: 9px;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid white;
+    }
+    .takt-control-sep { width: 1px; height: 32px; background: #e2e8f0; }
+    .takt-btn-action {
+      padding: 8px 20px; border-radius: 8px; border: none;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: all 0.2s; display: flex; align-items: center;
+      gap: 6px; letter-spacing: 0.3px;
+      font-family: 'Inter', sans-serif; white-space: nowrap;
+    }
+    .takt-btn-action.start-btn {
+      background: linear-gradient(135deg, #22c55e, #16a34a); color: white;
+      box-shadow: 0 2px 10px rgba(34,197,94,0.25);
+    }
+    .takt-btn-action.start-btn:hover {
+      box-shadow: 0 4px 20px rgba(34,197,94,0.4); transform: translateY(-1px);
+    }
+    .takt-btn-action.recording-btn {
+      background: linear-gradient(135deg, #ef4444, #dc2626); color: white;
+      box-shadow: 0 2px 10px rgba(239,68,68,0.25);
+      animation: rec-btn-pulse 2s infinite;
+    }
+    @keyframes rec-btn-pulse {
+      0%, 100% { box-shadow: 0 2px 10px rgba(239,68,68,0.25); }
+      50% { box-shadow: 0 4px 25px rgba(239,68,68,0.5); }
+    }
+    .takt-btn-action:disabled {
+      background: #e2e8f0; color: #94a3b8; cursor: not-allowed;
+      box-shadow: none; transform: none; animation: none;
+    }
+    .takt-btn-action.clear-btn {
+      background: white; color: #64748b; border: 2px solid #e2e8f0;
+    }
+    .takt-btn-action.clear-btn:hover {
+      border-color: #f59e0b; color: #f59e0b; background: #fffbeb;
+    }
+
+    /* TIMER BAR */
+    .takt-timer-bar {
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 24px; gap: 16px;
+      background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .takt-timer-bar.hidden { display: none; }
+    .takt-live-timer {
+      font-size: 30px; font-weight: 800;
+      font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace;
+      letter-spacing: 1px; color: #0f172a;
+    }
+    .takt-live-timer.recording {
+      color: #ef4444; animation: timer-color-pulse 1.5s infinite alternate;
+    }
+    @keyframes timer-color-pulse { from { color: #ef4444; } to { color: #f87171; } }
+    .takt-timer-task-label {
+      font-size: 13px; font-weight: 600; color: #475569;
+      padding: 5px 14px; background: #f1f5f9; border-radius: 8px;
+    }
+    .takt-timer-task-label .task-name { color: #6366f1; font-weight: 700; }
+    .takt-rec-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #ef4444; animation: rec-dot-blink 1s infinite;
+    }
+    @keyframes rec-dot-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+    /* TABLE */
+    .takt-table-wrap {
+      flex: 1; overflow-y: auto; min-height: 0;
+    }
+    .takt-table-wrap::-webkit-scrollbar { width: 6px; }
+    .takt-table-wrap::-webkit-scrollbar-track { background: #f8fafc; }
+    .takt-table-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .takt-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .takt-table thead { position: sticky; top: 0; z-index: 2; }
+    .takt-table thead th {
+      background: #f1f5f9; color: #475569; font-weight: 700;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      padding: 8px 14px; text-align: center;
+      border-bottom: 2px solid #e2e8f0; white-space: nowrap;
+    }
+    .takt-table thead th:first-child { text-align: left; padding-left: 24px; min-width: 260px; }
+    .takt-table thead th.obs-header { min-width: 110px; position: relative; }
+    .takt-table thead th.obs-header.active { background: #eef2ff; color: #6366f1; }
+    .takt-table thead th.obs-header.active::after {
+      content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+      height: 3px; background: #6366f1;
+    }
+    .takt-table tbody tr { transition: background 0.15s; }
+    .takt-table tbody tr:hover { background: #f8fafc; }
+    .takt-table tbody tr.current-task-row { background: #eef2ff; }
+    .takt-table tbody tr.current-task-row td:first-child {
+      border-left: 4px solid #6366f1; padding-left: 20px;
+    }
+    .takt-table tbody td {
+      padding: 7px 14px; text-align: center;
+      border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;
+    }
+    .takt-table tbody td:first-child {
+      text-align: left; padding-left: 24px; color: #1e293b; font-weight: 500;
+    }
+    .takt-table tbody td.target-col {
+      color: #94a3b8; font-size: 11px; font-weight: 600; background: #fafbfc;
+    }
+    .takt-table tbody td.obs-cell {
+      font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace;
+      font-weight: 700; font-size: 13px; min-width: 90px;
+    }
+    .takt-table tbody td.obs-cell.good { color: #16a34a; background: #f0fdf4; }
+    .takt-table tbody td.obs-cell.over { color: #dc2626; background: #fef2f2; }
+    .takt-table tbody td.obs-cell.active-col { background: #eef2ff; }
+    .takt-table tbody td.obs-cell.current-cell {
+      background: #6366f1; color: white;
+      position: relative; box-shadow: inset 0 0 0 2px #4f46e5;
+    }
+    .takt-table tbody td.obs-cell.current-cell::after { content: ' ⏱'; font-size: 11px; }
+    .takt-table tbody td.obs-cell.empty { color: #d1d5db; }
+    .takt-table tbody td.obs-cell.empty-active { color: #c7d2fe; background: #eef2ff; }
+
+    .takt-table tbody tr.cycle-sep td {
+      background: #f1f5f9; padding: 2px 14px;
+      font-size: 10px; font-weight: 700; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 1px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .takt-table tbody tr.row-start-time,
+    .takt-table tbody tr.row-end-time { background: #fafbfc; }
+    .takt-table tbody tr.row-start-time td,
+    .takt-table tbody tr.row-end-time td {
+      font-weight: 600; color: #6366f1;
+      border-bottom: 1px solid #e2e8f0; padding: 6px 14px;
+    }
+    .takt-table tbody tr.row-start-time td:first-child,
+    .takt-table tbody tr.row-end-time td:first-child { color: #475569; font-weight: 700; }
+    .takt-table tbody tr.row-total {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-top: 2px solid #e2e8f0;
+    }
+    .takt-table tbody tr.row-total td {
+      font-weight: 800; font-size: 13px; padding: 10px 14px; color: #1e293b;
+    }
+    .takt-table tbody tr.row-total td.obs-cell.good { color: #16a34a; background: #dcfce7; }
+    .takt-table tbody tr.row-total td.obs-cell.over { color: #dc2626; background: #fee2e2; }
+
+    /* PROGRESS */
+    .takt-progress-section {
+      padding: 8px 24px; background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+    }
+    .takt-progress-section.hidden { display: none; }
+    .takt-progress-bar-bg {
+      flex: 1; height: 6px; background: #e2e8f0;
+      border-radius: 3px; overflow: hidden;
+    }
+    .takt-progress-bar-fill {
+      height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      border-radius: 3px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .takt-progress-text {
+      font-size: 11px; font-weight: 700; color: #6366f1; white-space: nowrap;
+    }
+
+    /* FOOTER */
+    .takt-footer {
+      padding: 10px 24px; border-top: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fafbfc; flex-shrink: 0;
+    }
+    .takt-footer-left { display: flex; gap: 6px; }
+    .takt-footer-btn {
+      padding: 6px 14px; border-radius: 7px;
+      border: 1.5px solid #e2e8f0; background: white;
+      color: #64748b; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 5px;
+      font-family: 'Inter', sans-serif;
+    }
+    .takt-footer-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    .takt-footer-btn.danger:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+    .takt-footer-status { font-size: 11px; color: #94a3b8; font-weight: 500; }
+
+    /* CONFIRM */
+    .takt-confirm-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10;
+    }
+    .takt-confirm-box {
+      background: white; border-radius: 18px; padding: 28px;
+      width: 320px; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+    }
+    .takt-confirm-icon {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #fef2f2;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px; font-size: 22px;
+    }
+    .takt-confirm-title { font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
+    .takt-confirm-msg { font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
+    .takt-confirm-btns { display: flex; gap: 8px; }
+    .takt-confirm-btns button {
+      flex: 1; padding: 10px; border-radius: 10px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      border: none; transition: all 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .takt-confirm-cancel { background: #f1f5f9; color: #64748b; }
+    .takt-confirm-cancel:hover { background: #e2e8f0; }
+    .takt-confirm-ok { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+    .takt-confirm-ok:hover { box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
+
+    /* TOAST */
+    .takt-toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1e293b; color: white;
+      padding: 10px 22px; border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px; font-weight: 600;
+      z-index: 9999999; opacity: 0; transition: all 0.3s;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    .takt-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <div id="app"></div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════
+    // PROCESS PATH CONFIGURATION
+    // ═══════════════════════════════════════════════════════
+    function buildTasks(locate, move, drive, cage) {
+      const tasks = [];
+      for (let i = 1; i <= 3; i++) {
+        tasks.push({ name: `Time to locate item in bin (cycle ${i})`, target: locate });
+        tasks.push({ name: `Move item from bin to cage (cycle ${i})`, target: move });
+        tasks.push({ name: `Drive time from bin to bin (cycle ${i})`, target: drive });
+      }
+      tasks.push({ name: "Cage change over", target: cage });
+      const totalTarget = (locate + move + drive) * 3 + cage;
+      return { tasks, totalTarget };
+    }
+
+    const PROCESS_PATHS = {
+      "Pick": {
+        "Singles":     buildTasks(8, 15, 180, 480),
+        "VNA 1":       buildTasks(14, 9, 60, 300),
+        "VNA 2":       buildTasks(14, 9, 90, 480),
+        "Noncon/Bod":  buildTasks(14, 15, 180, 720),
+        "Multi":       buildTasks(9, 9, 180, 420)
+      }
+    };
+
+    // ═══════════════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════════════
+    const firstProcess = Object.keys(PROCESS_PATHS)[0];
+    const firstSub = Object.keys(PROCESS_PATHS[firstProcess])[0];
+
+    let state = {
+      selectedProcess: firstProcess,
+      selectedSubProcess: firstSub,
+      selectedObs: null,
+      isRunning: false,
+      currentTaskIndex: -1,
+      lastClickTime: null,
+      observationStore: {},
+      elapsedInterval: null
+    };
+
+    function storeKey() { return `${state.selectedProcess}__${state.selectedSubProcess}`; }
+
+    function ensureObservations() {
+      const key = storeKey();
+      if (!state.observationStore[key]) {
+        state.observationStore[key] = {
+          1: { startTime: null, endTime: null, tasks: [], total: null },
+          2: { startTime: null, endTime: null, tasks: [], total: null },
+          3: { startTime: null, endTime: null, tasks: [], total: null },
+          4: { startTime: null, endTime: null, tasks: [], total: null }
+        };
+      }
+      return state.observationStore[key];
+    }
+
+    function getObs() { return ensureObservations(); }
+    function getConfig() { return PROCESS_PATHS[state.selectedProcess][state.selectedSubProcess]; }
+
+    // ═══════════════════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════════════════
+    function formatTime(date) {
+      const h = date.getHours().toString().padStart(2, '0');
+      const m = date.getMinutes().toString().padStart(2, '0');
+      const s = date.getSeconds().toString().padStart(2, '0');
+      const cs = Math.floor(date.getMilliseconds() / 100);
+      return `${h}:${m}:${s}.${cs}`;
+    }
+
+    function formatElapsed(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const min = Math.floor(totalSec / 60).toString().padStart(2, '0');
+      const sec = (totalSec % 60).toString().padStart(2, '0');
+      const cs = Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
+      return `${min}:${sec}.${cs}`;
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.className = 'takt-toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      requestAnimationFrame(() => t.classList.add('show'));
+      setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 2500);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // RENDER
+    // ═══════════════════════════════════════════════════════
+    function render() {
+      const config = getConfig();
+      const TASKS = config.tasks;
+      const TOTAL_TARGET = config.totalTarget;
+      const observations = getObs();
+      const obs = state.selectedObs ? observations[state.selectedObs] : null;
+      const tasksDone = obs ? obs.tasks.length : 0;
+      const totalTasks = TASKS.length;
+      const progress = (tasksDone / totalTasks) * 100;
+      const isComplete = obs && obs.total !== null;
+
+      // Process dropdowns
+      let processOptions = '';
+      Object.keys(PROCESS_PATHS).forEach(p => {
+        processOptions += `<option value="${p}" ${p === state.selectedProcess ? 'selected' : ''}>${p}</option>`;
+      });
+      let subOptions = '';
+      Object.keys(PROCESS_PATHS[state.selectedProcess]).forEach(s => {
+        subOptions += `<option value="${s}" ${s === state.selectedSubProcess ? 'selected' : ''}>${s}</option>`;
+      });
+      const ddDisabled = state.isRunning ? 'disabled' : '';
+
+      // Target chips
+      const uniqueTasks = {};
+      TASKS.forEach(t => { uniqueTasks[t.name.replace(/ \(cycle \d\)/, '')] = t.target; });
+      let chipsHTML = '';
+      Object.entries(uniqueTasks).forEach(([name, target]) => {
+        const shortName = name.length > 20 ? name.substring(0, 18) + '…' : name;
+        chipsHTML += `<span class="takt-target-chip">${shortName}: ${target}s</span>`;
+      });
+
+      // Obs pills
+      let pillsHTML = '';
+      for (let i = 1; i <= 4; i++) {
+        const isSel = state.selectedObs === i;
+        const isDone = observations[i].total !== null;
+        let cls = isSel ? 'selected' : isDone ? 'completed' : '';
+        let dis = state.isRunning && !isSel ? 'disabled style="opacity:0.4;pointer-events:none;"' : '';
+        pillsHTML += `<button class="takt-obs-pill ${cls}" data-obs="${i}" ${dis}>Obs ${i}</button>`;
+      }
+
+      // Button
+      let btnClass = 'start-btn', btnText = '▶ START';
+      let btnDisabled = !state.selectedObs || isComplete;
+      if (state.isRunning && state.currentTaskIndex === -1) {
+        btnClass = 'recording-btn'; btnText = '⏱ CLICK — Record Start Time'; btnDisabled = false;
+      } else if (state.isRunning) {
+        btnClass = 'recording-btn';
+        btnText = `⏱ CLICK — Record Task ${state.currentTaskIndex + 1}/${totalTasks}`;
+        btnDisabled = false;
+      }
+
+      // Timer bar
+      let timerBarHTML = '';
+      if (state.isRunning) {
+        let taskLabel = state.currentTaskIndex >= 0
+          ? `Recording: <span class="task-name">${TASKS[state.currentTaskIndex].name}</span>`
+          : 'Click button to record <span class="task-name">Start Time</span>';
+        timerBarHTML = `
+          <div class="takt-timer-bar">
+            <div class="takt-rec-dot"></div>
+            <div class="takt-live-timer recording" id="takt-timer-main">${formatElapsed(Date.now() - (state.lastClickTime || Date.now()))}</div>
+            <div class="takt-timer-task-label">${taskLabel}</div>
+          </div>`;
+      } else {
+        timerBarHTML = `<div class="takt-timer-bar hidden"></div>`;
+      }
+
+      // Table rows
+      let tableRowsHTML = '';
+
+      // Start time row
+      tableRowsHTML += `<tr class="row-start-time"><td style="padding-left:24px;">⏰ Start Time</td><td class="target-col">—</td>`;
+      for (let i = 1; i <= 4; i++) {
+        const o = observations[i];
+        const isA = state.selectedObs === i;
+        tableRowsHTML += `<td class="obs-cell ${isA ? 'active-col' : ''}" style="font-size:11px;color:${o.startTime ? '#6366f1' : '#d1d5db'}">${o.startTime || '—'}</td>`;
+      }
+      tableRowsHTML += `</tr>`;
+
+      // Tasks
+      let lastCycle = 0;
+      TASKS.forEach((task, idx) => {
+        const cycleMatch = task.name.match(/\(cycle (\d)\)/);
+        const cycle = cycleMatch ? parseInt(cycleMatch[1]) : 0;
+        if (cycle > lastCycle && cycle > 1) {
+          tableRowsHTML += `<tr class="cycle-sep"><td colspan="6" style="padding-left:24px;">── Cycle ${cycle} ──</td></tr>`;
+        }
+        if (cycle > 0) lastCycle = cycle;
+
+        const isCurrentTask = state.isRunning && state.currentTaskIndex === idx;
+        tableRowsHTML += `<tr class="${isCurrentTask ? 'current-task-row' : ''}">
+          <td style="padding-left:${isCurrentTask ? '20px' : '24px'};">
+            <span style="color:#94a3b8;font-size:10px;font-weight:700;margin-right:6px;">${(idx + 1).toString().padStart(2, '0')}</span>
+            ${task.name}
+          </td>
+          <td class="target-col">${task.target}s</td>`;
+
+        for (let i = 1; i <= 4; i++) {
+          const o = observations[i];
+          const isA = state.selectedObs === i;
+          const val = o.tasks[idx];
+          const isCur = isCurrentTask && isA;
+          if (isCur) {
+            tableRowsHTML += `<td class="obs-cell current-cell" id="takt-live-cell">0s</td>`;
+          } else if (val !== undefined) {
+            tableRowsHTML += `<td class="obs-cell ${val > task.target ? 'over' : 'good'}">${val}s</td>`;
+          } else if (isA) {
+            tableRowsHTML += `<td class="obs-cell empty-active">—</td>`;
+          } else {
+            tableRowsHTML += `<td class="obs-cell empty">—</td>`;
+          }
+        }
+        tableRowsHTML += `</tr>`;
+      });
+
+      // End time row
+      tableRowsHTML += `<tr class="row-end-time"><td style="padding-left:24px;">⏰ End Time</td><td class="target-col">—</td>`;
+      for (let i = 1; i <= 4; i++) {
+        const o = observations[i];
+        const isA = state.selectedObs === i;
+        tableRowsHTML += `<td class="obs-cell ${isA ? 'active-col' : ''}" style="font-size:11px;color:${o.endTime ? '#6366f1' : '#d1d5db'}">${o.endTime || '—'}</td>`;
+      }
+      tableRowsHTML += `</tr>`;
+
+      // Total row
+      tableRowsHTML += `<tr class="row-total"><td style="padding-left:24px;">📊 Total</td><td class="target-col" style="font-weight:800;color:#1e293b;">${TOTAL_TARGET}s</td>`;
+      for (let i = 1; i <= 4; i++) {
+        const o = observations[i];
+        if (o.total !== null) {
+          tableRowsHTML += `<td class="obs-cell ${o.total <= TOTAL_TARGET ? 'good' : 'over'}">${o.total}s</td>`;
+        } else {
+          tableRowsHTML += `<td class="obs-cell empty">—</td>`;
+        }
+      }
+      tableRowsHTML += `</tr>`;
+
+      const ohc = [1,2,3,4].map(i => state.selectedObs === i ? 'obs-header active' : 'obs-header');
+
+      let statusText = 'Select an observation to begin';
+      if (state.isRunning) {
+        statusText = `Recording Obs ${state.selectedObs} — Task ${observations[state.selectedObs].tasks.length + (state.currentTaskIndex >= 0 ? 1 : 0)} of ${totalTasks}`;
+      } else if (isComplete) {
+        statusText = `✅ Obs ${state.selectedObs} complete — ${obs.total}s total`;
+      } else if (state.selectedObs && tasksDone > 0) {
+        statusText = `Obs ${state.selectedObs} — ${tasksDone}/${totalTasks} tasks recorded`;
+      } else if (state.selectedObs) {
+        statusText = `Obs ${state.selectedObs} selected — Ready to start`;
+      }
+
+      document.getElementById('app').innerHTML = `
+        <div class="takt-header">
+          <div class="takt-header-left">
+            <div class="takt-header-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
+            </div>
+            <div>
+              <div class="takt-header-title">Takt Time Study</div>
+              <div class="takt-header-subtitle">SNA4 — ${state.selectedProcess} › ${state.selectedSubProcess}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takt-process-bar">
+          <div class="takt-process-group">
+            <span class="takt-process-label">Process</span>
+            <select class="takt-process-select" id="takt-process-dd" ${ddDisabled}>${processOptions}</select>
+          </div>
+          <span class="takt-process-arrow">›</span>
+          <div class="takt-process-group">
+            <span class="takt-process-label">Sub-Process</span>
+            <select class="takt-process-select" id="takt-sub-dd" ${ddDisabled}>${subOptions}</select>
+          </div>
+          <div class="takt-target-summary">${chipsHTML}</div>
+          <div class="takt-process-tag">${totalTasks} Tasks · ${TOTAL_TARGET}s Target</div>
+        </div>
+
+        <div class="takt-control-bar">
+          <div class="takt-obs-pills">${pillsHTML}</div>
+          <div class="takt-control-sep"></div>
+          <button class="takt-btn-action ${btnClass}" id="takt-start-btn" ${btnDisabled ? 'disabled' : ''}>${btnText}</button>
+          <button class="takt-btn-action clear-btn" id="takt-clear-btn" ${!state.selectedObs ? 'disabled style="opacity:0.4;"' : ''}>🔄 Clear</button>
+        </div>
+
+        ${timerBarHTML}
+
+        <div class="takt-table-wrap">
+          <table class="takt-table">
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Target</th>
+                <th class="${ohc[0]}">Obs 1</th>
+                <th class="${ohc[1]}">Obs 2</th>
+                <th class="${ohc[2]}">Obs 3</th>
+                <th class="${ohc[3]}">Obs 4</th>
+              </tr>
+            </thead>
+            <tbody>${tableRowsHTML}</tbody>
+          </table>
+        </div>
+
+        <div class="takt-progress-section ${!state.selectedObs || (!state.isRunning && !isComplete && tasksDone === 0) ? 'hidden' : ''}">
+          <div class="takt-progress-bar-bg">
+            <div class="takt-progress-bar-fill" style="width: ${progress}%"></div>
+          </div>
+          <div class="takt-progress-text">${tasksDone}/${totalTasks} Tasks (${Math.round(progress)}%)</div>
+        </div>
+
+        <div class="takt-footer">
+          <div class="takt-footer-left">
+            <button class="takt-footer-btn" id="takt-export-csv">📥 Export CSV</button>
+            <button class="takt-footer-btn" id="takt-copy-data">📋 Copy</button>
+            <button class="takt-footer-btn danger" id="takt-clear-all">🗑 Clear All</button>
+          </div>
+          <div class="takt-footer-status">${statusText}</div>
+        </div>
+      `;
+
+      // Wire events
+      document.getElementById('takt-start-btn').onclick = handleStartStop;
+      document.getElementById('takt-clear-btn').onclick = handleClear;
+      document.getElementById('takt-export-csv').onclick = exportCSV;
+      document.getElementById('takt-copy-data').onclick = copyData;
+      document.getElementById('takt-clear-all').onclick = handleClearAll;
+
+      document.getElementById('takt-process-dd').onchange = (e) => {
+        state.selectedProcess = e.target.value;
+        state.selectedSubProcess = Object.keys(PROCESS_PATHS[state.selectedProcess])[0];
+        state.selectedObs = null;
+        ensureObservations();
+        render();
+      };
+
+      document.getElementById('takt-sub-dd').onchange = (e) => {
+        state.selectedSubProcess = e.target.value;
+        state.selectedObs = null;
+        ensureObservations();
+        render();
+      };
+
+      document.querySelectorAll('.takt-obs-pill').forEach(btn => {
+        btn.onclick = () => {
+          if (state.isRunning && state.selectedObs !== parseInt(btn.dataset.obs)) return;
+          state.selectedObs = parseInt(btn.dataset.obs);
+          render();
+        };
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // START / RECORD
+    // ═══════════════════════════════════════════════════════
+    function handleStartStop() {
+      if (!state.selectedObs) return;
+      const config = getConfig();
+      const TASKS = config.tasks;
+      const TOTAL_TARGET = config.totalTarget;
+      const observations = getObs();
+      const obs = observations[state.selectedObs];
+
+      if (!state.isRunning && obs.total === null) {
+        state.isRunning = true;
+        state.currentTaskIndex = -1;
+        state.lastClickTime = Date.now();
+        startElapsedTimer();
+        render();
+        return;
+      }
+
+      if (state.isRunning && state.currentTaskIndex === -1) {
+        obs.startTime = formatTime(new Date());
+        state.currentTaskIndex = 0;
+        state.lastClickTime = Date.now();
+        render();
+        return;
+      }
+
+      if (state.isRunning && state.currentTaskIndex >= 0) {
+        const now = Date.now();
+        const elapsed = Math.round((now - state.lastClickTime) / 1000);
+        obs.tasks.push(elapsed);
+        state.lastClickTime = now;
+
+        if (obs.tasks.length >= TASKS.length) {
+          obs.endTime = formatTime(new Date());
+          obs.total = obs.tasks.reduce((a, b) => a + b, 0);
+          state.isRunning = false;
+          state.currentTaskIndex = -1;
+          stopElapsedTimer();
+
+          const diff = obs.total - TOTAL_TARGET;
+          if (diff <= 0) {
+            showToast(`✅ Obs ${state.selectedObs} complete! ${Math.abs(diff)}s under target`);
+          } else {
+            showToast(`⚠️ Obs ${state.selectedObs} complete! ${diff}s over target`);
+          }
+        } else {
+          state.currentTaskIndex = obs.tasks.length;
+        }
+        render();
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // LIVE TIMER
+    // ═══════════════════════════════════════════════════════
+    function startElapsedTimer() {
+      stopElapsedTimer();
+      state.elapsedInterval = setInterval(() => {
+        const timerEl = document.getElementById('takt-timer-main');
+        const cellEl = document.getElementById('takt-live-cell');
+        if (state.lastClickTime) {
+          const elapsed = Date.now() - state.lastClickTime;
+          if (timerEl) timerEl.textContent = formatElapsed(elapsed);
+          if (cellEl) cellEl.textContent = Math.round(elapsed / 1000) + 's';
+        }
+      }, 50);
+    }
+
+    function stopElapsedTimer() {
+      if (state.elapsedInterval) {
+        clearInterval(state.elapsedInterval);
+        state.elapsedInterval = null;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // CLEAR
+    // ═══════════════════════════════════════════════════════
+    function handleClear() {
+      if (!state.selectedObs) return;
+      showConfirm(
+        `Clear Observation ${state.selectedObs}?`,
+        'All recorded times for this observation will be deleted.',
+        () => {
+          if (state.isRunning) {
+            state.isRunning = false;
+            state.currentTaskIndex = -1;
+            stopElapsedTimer();
+          }
+          getObs()[state.selectedObs] = { startTime: null, endTime: null, tasks: [], total: null };
+          render();
+          showToast(`🔄 Observation ${state.selectedObs} cleared`);
+        }
+      );
+    }
+
+    function handleClearAll() {
+      showConfirm(
+        'Clear ALL Observations?',
+        `All 4 observations for ${state.selectedProcess} › ${state.selectedSubProcess} will be permanently deleted.`,
+        () => {
+          state.isRunning = false;
+          state.currentTaskIndex = -1;
+          stopElapsedTimer();
+          const observations = getObs();
+          for (let i = 1; i <= 4; i++) {
+            observations[i] = { startTime: null, endTime: null, tasks: [], total: null };
+          }
+          state.selectedObs = null;
+          render();
+          showToast('🗑 All observations cleared');
+        }
+      );
+    }
+
+    function showConfirm(title, msg, onConfirm) {
+      const overlay = document.createElement('div');
+      overlay.className = 'takt-confirm-overlay';
+      overlay.innerHTML = `
+        <div class="takt-confirm-box">
+          <div class="takt-confirm-icon">⚠️</div>
+          <div class="takt-confirm-title">${title}</div>
+          <div class="takt-confirm-msg">${msg}</div>
+          <div class="takt-confirm-btns">
+            <button class="takt-confirm-cancel" id="takt-cfm-no">Cancel</button>
+            <button class="takt-confirm-ok" id="takt-cfm-yes">Clear</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      document.getElementById('takt-cfm-no').onclick = () => overlay.remove();
+      document.getElementById('takt-cfm-yes').onclick = () => { overlay.remove(); onConfirm(); };
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // EXPORT
+    // ═══════════════════════════════════════════════════════
+    function exportCSV() {
+      const config = getConfig();
+      const TASKS = config.tasks;
+      const TOTAL_TARGET = config.totalTarget;
+      const observations = getObs();
+
+      let csv = `Process Path,${state.selectedProcess}\nSub-Process,${state.selectedSubProcess}\nTotal Target,${TOTAL_TARGET}s\n\n`;
+      csv += 'Task,Target,Observation 1,Observation 2,Observation 3,Observation 4\n';
+
+      csv += `Start Time,—`;
+      for (let i = 1; i <= 4; i++) csv += `,${observations[i].startTime || ''}`;
+      csv += '\n';
+
+      TASKS.forEach((task, idx) => {
+        csv += `"${task.name}",${task.target}`;
+        for (let i = 1; i <= 4; i++) {
+          const v = observations[i].tasks[idx];
+          csv += `,${v !== undefined ? v : ''}`;
+        }
+        csv += '\n';
+      });
+
+      csv += `End Time,—`;
+      for (let i = 1; i <= 4; i++) csv += `,${observations[i].endTime || ''}`;
+      csv += '\n';
+
+      csv += `Total,${TOTAL_TARGET}`;
+      for (let i = 1; i <= 4; i++) csv += `,${observations[i].total !== null ? observations[i].total : ''}`;
+      csv += '\n';
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `TaktTimeStudy_${state.selectedProcess}_${state.selectedSubProcess}_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      showToast('📥 CSV downloaded');
+    }
+
+    function copyData() {
+      const config = getConfig();
+      const TASKS = config.tasks;
+      const TOTAL_TARGET = config.totalTarget;
+      const observations = getObs();
+
+      let text = `TAKT TIME STUDY — SNA4\n`;
+      text += `Process: ${state.selectedProcess} › ${state.selectedSubProcess}\n`;
+      text += `Date: ${new Date().toLocaleString()}\n`;
+      text += `Target Total: ${TOTAL_TARGET}s\n\n`;
+
+      for (let i = 1; i <= 4; i++) {
+        const o = observations[i];
+        if (o.tasks.length === 0) continue;
+        text += `── Observation ${i} ──\n`;
+        text += `Start: ${o.startTime || 'N/A'}\n`;
+        TASKS.forEach((t, idx) => {
+          const v = o.tasks[idx];
+          if (v !== undefined) {
+            text += `  ${v <= t.target ? '✅' : '⚠️'} ${t.name}: ${v}s (target: ${t.target}s)\n`;
+          }
+        });
+        text += `End: ${o.endTime || 'N/A'}\nTotal: ${o.total}s (target: ${TOTAL_TARGET}s)\n\n`;
+      }
+      navigator.clipboard.writeText(text);
+      showToast('📋 Copied to clipboard');
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // KEYBOARD SHORTCUTS
+    // ═══════════════════════════════════════════════════════
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && state.isRunning) {
+        const tag = document.activeElement.tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+          e.preventDefault();
+          handleStartStop();
+        }
+      }
+    });
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
